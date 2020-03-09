@@ -12,3 +12,6 @@ On Nvidia Tesla P40，the time of network is 13ms.
 模型 NMS_Params|Easy Set|Medium Set|Hard Set
 ------|--------|----------|--------
 lightDSFD,thresh=0.05,number=500|0.891 |0.864       |0.469
+
+## DSFDv2
+We update DSFD to generate DSFDv2, welcome to use

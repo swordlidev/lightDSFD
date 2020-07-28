@@ -70,6 +70,8 @@ class Detect(Function):
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
+                if boxes.shape[0] == 0:
+                    continue
                 # idx of highest scoring and non-overlapping boxes per class
                 #t3 = time.time()
                 ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)

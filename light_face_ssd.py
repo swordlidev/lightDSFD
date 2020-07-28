@@ -219,7 +219,7 @@ class SSD(nn.Module):
         
     def init_priors(self ,cfg , min_size=cfg['min_sizes'], max_size=cfg['max_sizes']):
         priorbox = PriorBox(cfg , min_size, max_size)
-        prior = Variable ( priorbox.forward() , volatile=True)
+        prior = Variable(priorbox.forward())
         return prior
         
     def forward(self, x):
@@ -380,11 +380,11 @@ class SSD(nn.Module):
 
     def _upsample_add(self, x, y):
         _,_,H,W = y.size()
-        return F.upsample(x, size=(H,W), mode='bilinear') + y
+        return F.interpolate(x, size=(H,W), mode='bilinear', align_corners=True) + y
 
     def _upsample_product(self, x, y):
         _,_,H,W = y.size()
-        return F.upsample(x, size=(H,W), mode='bilinear') * y
+        return F.interpolate(x, size=(H,W), mode='bilinear', align_corners=True) * y
 
 def multibox(input_channels, mbox_cfg, num_classes):
     loc_layers = []

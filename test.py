@@ -92,7 +92,7 @@ def infer(net , img , transform , thresh , cuda , shrink):
         img = cv2.resize(img, None, None, fx=shrink, fy=shrink, interpolation=cv2.INTER_LINEAR)
 
     x = torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
-    x = Variable(x.unsqueeze(0) , volatile=True)
+    x = x.unsqueeze(0)
     if cuda:
         x = x.cuda()
     y = net(x)      # forward pass
@@ -198,17 +198,18 @@ def light_test_widerface():
     print (thresh)
     save_path = args.save_folder
     num_images = len(testset)
-    for i in range(num_images):
-        img = testset.pull_image(i)
-        img_id, annotation = testset.pull_anno(i)
-        event = testset.pull_event(i)
-        print('Testing image {:d}/{:d} {}....'.format(i+1, num_images , img_id))
-        shrink = 1
-        det = infer(net , img , transform , thresh , cuda , shrink)
-        if not os.path.exists(save_path + event):
-            os.makedirs(save_path + event)
-        f = open(save_path + event + '/' + img_id.split(".")[0] + '.txt', 'w')
-        write_to_txt(f, np.array(det) , event , img_id)
+    with torch.no_grad():
+        for i in range(num_images):
+            img = testset.pull_image(i)
+            img_id, annotation = testset.pull_anno(i)
+            event = testset.pull_event(i)
+            print('Testing image {:d}/{:d} {}....'.format(i+1, num_images , img_id))
+            shrink = 1
+            det = infer(net , img , transform , thresh , cuda , shrink)
+            if not os.path.exists(save_path + event):
+                os.makedirs(save_path + event)
+            f = open(save_path + event + '/' + img_id.split(".")[0] + '.txt', 'w')
+            write_to_txt(f, np.array(det) , event , img_id)
 
 if __name__ == '__main__':
     light_test_oneimage()

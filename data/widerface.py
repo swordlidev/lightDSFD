@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 sys.path.append("/f/home/jianli/code/s3fd.180716/")
 #from utils.augmentations import SSDAugmentation
-import scipy.io
+import h5py
 import pdb
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -144,10 +144,10 @@ class WIDERFaceDetection(data.Dataset):
         self.path_to_label = path_to_label
         self.path_to_image = path_to_image
         self.fname = fname
-        self.f = scipy.io.loadmat(osp.join(self.path_to_label, self.fname))
-        self.event_list = self.f.get('event_list')
-        self.file_list = self.f.get('file_list')
-        self.face_bbx_list = self.f.get('face_bbx_list')
+        self.f = h5py.File(osp.join(self.path_to_label, self.fname), 'r')
+        self.event_list = self.f.get('event_list')[0]
+        self.file_list = self.f.get('file_list')[0]
+        self.face_bbx_list = self.f.get('face_bbx_list')[0]
  
         self._load_widerface()
 
@@ -156,9 +156,11 @@ class WIDERFaceDetection(data.Dataset):
         error_bbox = 0 
         train_bbox = 0
         for event_idx, event in enumerate(self.event_list):
-            directory = event[0][0]
-            for im_idx, im in enumerate(self.file_list[event_idx][0]):
-                im_name = im[0][0]
+            directory = ''.join(chr(c) for c in self.f[event][:])
+            file_list_iterator = self.f[self.file_list[event_idx]][0]
+            face_bbx_iterator = self.f[self.face_bbx_list[event_idx]][0]
+            for im_idx, (im, bbx) in enumerate(zip(file_list_iterator, face_bbx_iterator)):
+                im_name = ''.join(chr(c) for c in self.f[im][:])
 
                 if self.image_set in [ 'test' , 'val']:
                     self.img_ids.append( osp.join(self.path_to_image, directory,  im_name + '.jpg') )
@@ -166,19 +168,19 @@ class WIDERFaceDetection(data.Dataset):
                     self.label_ids.append([])
                     continue
 
-                face_bbx = self.face_bbx_list[event_idx][0][im_idx][0]
+                face_bbx = self.f[bbx][:]
                 bboxes = []
-                for i in range(face_bbx.shape[0]):
+                for i in range(face_bbx.shape[1]):
                     # filter bbox
-                    if face_bbx[i][2] < 2 or face_bbx[i][3] < 2 or face_bbx[i][0] < 0 or face_bbx[i][1] < 0:
+                    if face_bbx[2][i] < 2 or face_bbx[3][i] < 2 or face_bbx[0][i] < 0 or face_bbx[1][i] < 0:
                         error_bbox +=1
                         #print (face_bbx[i])
                         continue 
                     train_bbox += 1 
-                    xmin = float(face_bbx[i][0])
-                    ymin = float(face_bbx[i][1])
-                    xmax = float(face_bbx[i][2]) + xmin -1 	
-                    ymax = float(face_bbx[i][3]) + ymin -1
+                    xmin = float(face_bbx[0][i])
+                    ymin = float(face_bbx[1][i])
+                    xmax = float(face_bbx[2][i]) + xmin -1 	
+                    ymax = float(face_bbx[3][i]) + ymin -1
                     bboxes.append([xmin, ymin, xmax, ymax, 0])
 
                 if ( len(bboxes)==0 ):  #  filter bbox will make bbox none
